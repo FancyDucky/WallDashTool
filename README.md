@@ -26,22 +26,10 @@ A lightweight, browser-based tool to measure Rocket League wall-dash “double t
   - Analog-to-digital thresholds vs true digital flags
   - OS/connection path differences (wired vs Bluetooth)
 
-## Development
-
-- Core files:
-  - `index.html`: markup and UI
-  - `styles.css`: visual design
-  - `script.js`: logic for inputs, rendering, audio, overlays
-- No build step is required; open `index.html` to run.
-
-## Assets
-
-- Avatar: `DuckSmall.jpg` / `Duck.jpg`
-- Icons: `youtube.png`, `Twitch.png`, `discord.png`
-
 ## License
 
 This project is provided as-is for personal use and community practice.
+
 
 
 
