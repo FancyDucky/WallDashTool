@@ -4,6 +4,8 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Tap Speed Tester — Gamepad A Double-Tap</title>
+	<link rel="icon" href="Icon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="Icon.ico" type="image/x-icon">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -13,16 +15,15 @@
 	<div class="bg"></div>
 	<main class="container">
 		<header class="header">
-			<h1>Wall Dash Tester</h1>
+			<h1 class="rainbow-text">Wall Dasher</h1>
 			<p class="subtitle">Measure time between button taps for Rocket League wall dashes.</p>
 		</header>
 
 		<section class="controls card">
 			<div class="row">
-				<button id="resetBtn" class="ghost" disabled>Reset</button>
 				<button id="toggleSoundBtn" class="ghost">Tap Sound: On</button>
 				<button id="openOverlayBtn" class="ghost">Open Overlay</button>
-				<button id="kbmModeBtn" class="ghost">KB/M mode: Off</button>
+				<button id="kbmModeBtn" class="ghost">Input Mode: Gamepad</button>
 				<button id="scrollWheelBtn" class="ghost">Scroll Wheel: Off</button>
 				<button id="aboutBtn" class="ghost about-btn">About</button>
 			</div>
@@ -33,15 +34,31 @@
 				</div>
 				<div>
 					<div class="label">Gamepad</div>
-					<div id="padName" class="value">Not connected</div>
+					<div id="padName" class="value">Press Any Button</div>
 				</div>
 				<div class="row-break"></div>
 				<div class="bind-buttons">
-					<button id="bindTapBtn" class="rebind">Bind Tap: <span id="bindTapText">A (0)</span></button>
-					<button id="bindRestartBtn" class="rebind">Bind Restart: <span id="bindRestartText">B (1)</span></button>
+					<button id="bindTapBtn" class="rebind">Bind Tap Button:<br><span id="bindTapText">A</span></button>
+					<button id="bindRestartBtn" class="rebind">Bind Clear Button:<br><span id="bindRestartText">B</span></button>
+					<button id="unbindBtn" class="rebind">Unbind<br>Buttons</button>
+				</div>
+				<div class="vj-wrap">
+					<div class="vj-container">
+						<div class="vj-left">
+							<div class="vj-base">
+								<div id="vjStick" class="vj-stick"></div>
+							</div>
+							<div class="vj-values">
+								X: <span id="joyX">0.00</span><br>
+								Y: <span id="joyY">0.00</span>
+							</div>
+						</div>
+						<!-- Heatmap will be attached to the right by script -->
+						<button id="joyClearBtn" class="ghost" disabled style="display:none">Clear</button>
+					</div>
 				</div>
 			</div>
-			<p class="hint">Press your controller’s A button. This page uses the Gamepad API; connect your controller and press any button once to wake it up.</p>
+			
 		</section>
 
 		<section class="audio card">
@@ -64,10 +81,10 @@
 			<div class="graph-header">
 				<h2>Double-Tap Graph</h2>
 				<div class="legend">
-					<span class="dot ok"></span><span>≤ 85 ms</span>
-					<span class="dot warn"></span><span>86–100 ms</span>
-					<span class="dot red"></span><span>101–150 ms</span>
-					<span class="dot black"></span><span>&gt; 150 ms</span>
+					<span class="dot ok"></span><span>≤ 95 ms</span>
+					<span class="dot warn"></span><span>96–120 ms</span>
+					<span class="dot red"></span><span>121–150 ms</span>
+					<span class="dot black"></span><span>151+ ms</span>
 				</div>
 			</div>
 			<div id="barChart" class="bar-chart" aria-label="Bar chart of pairwise A-button intervals"></div>
@@ -77,14 +94,6 @@
 					<div id="avgPair" class="value">—</div>
 				</div>
 				<div>
-					<div class="label">Average time between double tap pairs (AvgBDTP)</div>
-					<div id="avgAll" class="value">—</div>
-				</div>
-				<div>
-					<div class="label">Total pairs</div>
-					<div id="pairCount" class="value">0</div>
-				</div>
-				<div>
 					<div class="label">Best Pair</div>
 					<div id="bestPair" class="value">—</div>
 				</div>
@@ -92,13 +101,25 @@
 					<div class="label">Worst Pair</div>
 					<div id="worstPair" class="value">—</div>
 				</div>
+				<div class="pair-total">
+					<div class="label">Total pairs</div>
+					<div id="pairCount" class="value">0</div>
+				</div>
+				<div>
+					<div class="label">Average time between double tap pairs (AvgBDTP)</div>
+					<div id="avgAll" class="value">—</div>
+				</div>
+				<div class="graph-action">
+					<button id="ignoreBlackBtn" class="ghost">Ignore Black Bars: Off</button>
+					<button id="resetBtn" class="ghost">Clear Graph</button>
+				</div>
 			</div>
 		</section>
 
 		<div class="made-by">
 			<span>Created by <a id="fancyDuckLink" href="https://www.youtube.com/@FancyDuck_RL" target="_blank" rel="noopener noreferrer">FancyDuck</a></span>
 			<img src="DuckSmall.jpg" alt="FancyDuck avatar" class="made-by-avatar">
-		</div>
+			</div>
 
 		<footer class="footer"></footer>
 	</main>
@@ -140,6 +161,24 @@
 				<div class="about-text">
 					We use high-frequency polling and precise timestamps to minimize this, but a small variance is expected.
 				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Welcome modal -->
+	<div id="welcomeOverlay" class="lt-overlay top" aria-hidden="true">
+		<div class="lt-sheet" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+			<div id="welcomeTitle" class="lt-title">Welcome to <span class="rainbow-text">Wall Dasher</span></div>
+			<div class="lt-links">
+				<video id="welcomeVideo" class="welcome-video" autoplay loop playsinline preload="metadata">
+					<source src="Intro.mp4" type="video/mp4">
+					Your browser does not support the video tag.
+				</video>
+				<div class="unmute-hint">Click Video to Unmute</div>
+				<div class="about-text">
+					This Website measures the time between button taps to help users perfect their wall dashes. Please understand that this website is under development so expect frequent changes and bugs. Enjoy!
+				</div>
+				<div class="press-any">PRESS ANY BUTTON TO CONTINUE</div>
 			</div>
 		</div>
 	</div>

@@ -57,6 +57,18 @@ body {
 	font-weight: 800;
 	letter-spacing: -0.02em;
 }
+.rainbow-text {
+	background: linear-gradient(90deg, #ff6ec7, #ffd84d, #6ae3ff, #37e0a2, #ff647c, #ff6ec7);
+	background-size: 200% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: rainbowShift 3s linear infinite;
+}
+@keyframes rainbowShift {
+	0% { background-position: 200% 50%; }
+	100% { background-position: 0% 50%; }
+}
 .subtitle {
 	margin: 8px 0 0;
 	color: var(--muted);
@@ -92,6 +104,75 @@ body {
 	display: flex;
 	gap: 12px;
 	align-items: center;
+}
+.vj-wrap {
+	display: flex;
+	align-items: center;
+	margin-top: 10px;
+	margin-left: auto; /* push the joystick/heatmap block to the right */
+	padding-left: 16px; /* add breathing room from bind buttons */
+}
+.vj-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+}
+.vj-left {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+}
+.vj-base {
+	position: relative;
+	width: 160px;
+	height: 160px;
+	border-radius: 50%;
+	background: rgba(255,255,255,0.06);
+	border: 1px solid var(--card-stroke);
+	box-shadow: inset 0 0 10px rgba(0,0,0,0.25);
+}
+.vj-stick {
+	position: absolute;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: linear-gradient(180deg, rgba(130, 220, 255, 0.9), rgba(90, 190, 255, 0.7));
+	border: 1px solid rgba(255,255,255,0.25);
+	box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+	left: 64px; /* centered by default: (160-32)/2 */
+	top: 64px;
+	pointer-events: none;
+	transition: transform 0.03s linear;
+}
+.vj-values {
+	font-size: 12px;
+	color: var(--muted);
+	line-height: 1.2;
+	min-width: 140px;
+	width: 140px; /* stabilize layout to prevent jitter */
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	text-align: center;
+}
+/* stabilize average readout width to avoid layout shifts */
+#joyAvg {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	min-width: 180px;
+}
+/* make bind buttons consistent height */
+.bind-buttons .rebind {
+	min-height: 64px;
+}
+.bind-buttons .btn-icon {
+	width: 31px;
+	height: 31px;
+	object-fit: contain;
+	vertical-align: middle;
+	margin-top: 6px; /* aligns with second-line label layout */
+	pointer-events: none; /* ensure clicks hit the button and not the img */
 }
 .row-break {
 	flex-basis: 100%;
@@ -232,6 +313,17 @@ button.ghost {
 	gap: 16px;
 	margin-top: 12px;
 }
+.pair-total {
+	justify-self: center;
+	text-align: center;
+}
+.graph-action {
+	grid-column: -1;
+	justify-self: end;
+	align-self: end;
+	display: flex;
+	gap: 10px;
+}
 
 .summary h2 {
 	margin: 0 0 8px 0;
@@ -272,13 +364,20 @@ button.ghost {
 
 .made-by {
 	text-align: center;
-	margin-top: 22px;
+	margin: 22px auto 0;
 	font-size: 18px;
 	color: var(--text);
-	display: flex;
+	display: flex; /* block flex to allow auto-centering */
+	width: max-content; /* shrink to content width */
 	align-items: center;
 	justify-content: center;
-	gap: 10px;
+	gap: 8px;
+	padding: 6px 10px;
+	border-radius: 12px; /* more square */
+	border: 1px solid rgba(255,255,255,0.10);
+	background: #1a1e2e; /* darker grey capsule */
+	cursor: pointer;
+	transition: background 0.2s ease, transform 0.06s ease;
 }
 .made-by a {
 	color: #ffd84d; /* brighter yellow */
@@ -288,6 +387,14 @@ button.ghost {
 }
 .made-by a:hover {
 	text-decoration: none;
+	text-shadow: 0 0 16px rgba(255, 216, 77, 0.60), 0 0 28px rgba(255, 216, 77, 0.40);
+	animation: fancyGlowPulse 1.2s ease-in-out infinite alternate;
+}
+.made-by:hover {
+	background: #22283a;
+	transform: translateY(-1px);
+}
+.made-by:hover a {
 	text-shadow: 0 0 16px rgba(255, 216, 77, 0.60), 0 0 28px rgba(255, 216, 77, 0.40);
 	animation: fancyGlowPulse 1.2s ease-in-out infinite alternate;
 }
@@ -391,6 +498,36 @@ button.ghost {
 	color: var(--text);
 	text-shadow: none;
 }
+/* Welcome modal title should be white, with rainbow span inside */
+#welcomeOverlay .lt-title {
+	color: var(--text);
+	text-shadow: none;
+	font-size: 28px;
+	margin-bottom: 14px;
+}
+/* Center the welcome paragraph */
+#welcomeOverlay .about-text {
+	text-align: center;
+}
+/* Welcome video styling */
+.welcome-video {
+	width: 100%;
+	max-width: 480px;
+	height: auto;
+	display: block;
+	margin: 6px auto 8px;
+	border-radius: 10px;
+	box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+}
+/* Simple hint under the welcome video */
+.unmute-hint {
+	text-align: center;
+	font-size: 12px;
+	color: var(--muted);
+	margin-top: -2px;
+	margin-bottom: 8px;
+	user-select: none;
+}
 .lt-links {
 	display: flex;
 	flex-direction: column;
@@ -406,6 +543,20 @@ button.ghost {
 	padding: 0;
 	color: var(--text);
 	opacity: 0.95;
+}
+
+.press-any {
+	margin-top: 12px;
+	text-align: center;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	color: var(--text);
+	opacity: 0.85;
+	animation: pressPulse 1000ms ease-in-out infinite alternate;
+}
+@keyframes pressPulse {
+	from { opacity: 0.35; transform: translateY(2px); text-shadow: 0 0 8px rgba(255,255,255,0.20); }
+	to   { opacity: 1;    transform: translateY(0);   text-shadow: 0 0 16px rgba(255,255,255,0.40); }
 }
 .lt-btn {
 	display: flex;
