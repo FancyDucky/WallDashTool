@@ -5,7 +5,7 @@ A lightweight, browser-based tool to measure Rocket League wall-dash “double t
 ## Features
 
 - Double-Tap Graph with color-coded bars:
-  - Green ≤ 85 ms, Yellow 86–100 ms, Red 101–150 ms, Black > 150 ms
+  - Green ≤ 95 ms, Yellow 96–120 ms, Red 121–150 ms, Black > 150 ms
   - Summary in-graph: Average double tap speed, Average time between double tap pairs (AvgBDTP), Total pairs, Best/Worst pairs
 - Input support:
   - Gamepad via the Web Gamepad API (bind Tap/Restart to any buttons)
@@ -42,6 +42,7 @@ A lightweight, browser-based tool to measure Rocket League wall-dash “double t
 ## License
 
 This project is provided as-is for personal use and community practice.
+
 
 
 
