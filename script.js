@@ -3,6 +3,7 @@
 	const THRESHOLD_MS = 95; // Bars become red if interval > THRESHOLD_MS (visual only; see class logic)
 	const DEFAULT_TAP_INDEX = 0; // A / Cross
 	const DEFAULT_RESTART_INDEX = 1; // B / Circle
+	const DEFAULT_AUDIO_INDEX = -1; // Unbound by default
 	const DEFAULT_KBM_TAP = 2; // Right click (Tap)
 	const DEFAULT_KBM_RESTART = 0; // Left click (Restart)
 
@@ -24,8 +25,10 @@
 	const restartButtonLabelEl = document.getElementById('restartButtonLabel');
 	const bindTapBtn = document.getElementById('bindTapBtn');
 	const bindRestartBtn = document.getElementById('bindRestartBtn');
+	const bindAudioBtn = document.getElementById('bindAudioBtn');
 	const bindTapText = document.getElementById('bindTapText');
 	const bindRestartText = document.getElementById('bindRestartText');
+	const bindAudioText = document.getElementById('bindAudioText');
 	const toggleSoundBtn = document.getElementById('toggleSoundBtn');
 	const play85Btn = document.getElementById('play85Btn');
 	const stop85Btn = document.getElementById('stop85Btn');
@@ -61,7 +64,8 @@
 	const pressTimes = []; // absolute ms since performance.now() at first press
 	let tapButtonIndex = Number(localStorage.getItem('tapButtonIndex') ?? DEFAULT_TAP_INDEX);
 	let restartButtonIndex = Number(localStorage.getItem('restartButtonIndex') ?? DEFAULT_RESTART_INDEX);
-	let bindingMode = null; // 'tap' | 'restart' | null
+	let audioButtonIndex = Number(localStorage.getItem('audioButtonIndex') ?? DEFAULT_AUDIO_INDEX);
+	let bindingMode = null; // 'tap' | 'restart' | 'audio' | null
 	let lastMapping = 'standard';
 	let tapSoundEnabled = true;
 	let audioCtx = null;
@@ -336,15 +340,18 @@
 		// While in binding mode, force prompt text and avoid rendering icons
 		if (bindingMode) {
 			if (bindingMode === 'tap' && bindTapText) {
-				bindTapText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a gamepad button...';
+				bindTapText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a Button';
 			}
 			if (bindingMode === 'restart' && bindRestartText) {
-				bindRestartText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a gamepad button...';
+				bindRestartText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a Button';
+			}
+			if (bindingMode === 'audio' && bindAudioText) {
+				bindAudioText.textContent = 'Press a Button';
 			}
 			// Do not proceed to icon/text rendering while awaiting a bind
 			return;
 		}
-		let tapName, restartName;
+		let tapName, restartName, audioName;
 		if (kbmMode) {
 			const tapParts = [mouseButtonIndexToName(kbmTapButton), keyCodeToName(kbmTapKey)].filter(Boolean);
 			const restartParts = [mouseButtonIndexToName(kbmRestartButton), keyCodeToName(kbmRestartKey)].filter(Boolean);
@@ -352,9 +359,13 @@
 			restartName = restartParts.length ? restartParts.join(', ') : 'Unbound';
 			if (bindTapText) bindTapText.textContent = tapName;
 			if (bindRestartText) bindRestartText.textContent = restartName;
+			// Audio bind is gamepad-only; show its current mapping (or Unbound)
+			audioName = audioButtonIndex != null && audioButtonIndex >= 0 ? buttonIndexToName(audioButtonIndex, lastMapping) : 'Unbound';
+			if (bindAudioText) bindAudioText.textContent = audioName;
 		} else {
 			tapName = tapButtonIndex != null && tapButtonIndex >= 0 ? buttonIndexToName(tapButtonIndex, lastMapping) : 'Unbound';
 			restartName = restartButtonIndex != null && restartButtonIndex >= 0 ? buttonIndexToName(restartButtonIndex, lastMapping) : 'Unbound';
+			audioName = audioButtonIndex != null && audioButtonIndex >= 0 ? buttonIndexToName(audioButtonIndex, lastMapping) : 'Unbound';
 			// If PlayStation pad detected, render SVG icons for known buttons
 			if (bindTapText) {
 				if (isPlayStationPad && tapButtonIndex != null && tapButtonIndex >= 0) {
@@ -392,6 +403,25 @@
 					}
 				} else {
 					bindRestartText.textContent = restartName;
+				}
+			}
+			if (bindAudioText) {
+				if (isPlayStationPad && audioButtonIndex != null && audioButtonIndex >= 0) {
+					const icon = getPsIconForIndex(audioButtonIndex);
+					if (icon) {
+						bindAudioText.innerHTML = `<img class="btn-icon" src="${icon.src}" alt="${icon.alt}">`;
+					} else {
+						bindAudioText.textContent = audioName;
+					}
+				} else if (isXboxPad && audioButtonIndex != null && audioButtonIndex >= 0) {
+					const icon = getXboxIconForIndex(audioButtonIndex);
+					if (icon) {
+						bindAudioText.innerHTML = `<img class="btn-icon" src="${icon.src}" alt="${icon.alt}">`;
+					} else {
+						bindAudioText.textContent = audioName;
+					}
+				} else {
+					bindAudioText.textContent = audioName;
 				}
 			}
 		}
@@ -474,7 +504,7 @@
 				// Preserve current state
 				btn.dataset.prevDisabled = btn.disabled ? 'true' : 'false';
 				// Keep bind controls usable so user can cancel/switch bindings
-				if (btn === bindTapBtn || btn === bindRestartBtn || btn === unbindBtn) {
+				if (btn === bindTapBtn || btn === bindRestartBtn || btn === bindAudioBtn || btn === unbindBtn) {
 					btn.disabled = false;
 				} else {
 					btn.disabled = true;
@@ -737,6 +767,7 @@
 
 	// High precision gamepad polling (aims for ~4ms; browsers clamp setInterval)
 	function pollInputs() {
+		let skipActionsThisPoll = false;
 		// Auto-enable multi-pad mode if more than one gamepad is detected
 		try {
 			const padsProbe = (navigator.getGamepads?.() || []).filter(Boolean);
@@ -863,30 +894,40 @@
 						} else if (bindingMode === 'restart') {
 							restartButtonIndex = i;
 							localStorage.setItem('restartButtonIndex', String(i));
+						} else if (bindingMode === 'audio') {
+							audioButtonIndex = i;
+							localStorage.setItem('audioButtonIndex', String(i));
 						}
 						bindingMode = null;
 						bindTapBtn?.classList.remove('active');
 						bindRestartBtn?.classList.remove('active');
+						bindAudioBtn?.classList.remove('active');
 						updateBindingLabels();
 						setBindingUIState(false);
+						skipActionsThisPoll = true;
 						break;
 					}
 				}
 			}
 			// Actions on rising edges
-			if (currAny[restartButtonIndex] && !prevAnyButtonStates[restartButtonIndex]) {
-				reset(false);
-				start();
-			}
-			if (currAny[tapButtonIndex] && !prevAnyButtonStates[tapButtonIndex]) {
-				joyAutoCapture = true;
-				if (!isRunning) start();
-				if (isRunning) {
-					const now = performance.now();
-					if (startTimeMs == null) startTimeMs = now;
-					pressTimes.push(now - startTimeMs);
-					render();
-					maybePlayTapSound();
+			if (!skipActionsThisPoll) {
+				if (audioButtonIndex >= 0 && currAny[audioButtonIndex] && !prevAnyButtonStates[audioButtonIndex]) {
+					if (interval85Id) stop85Loop(); else start85Loop();
+				}
+				if (currAny[restartButtonIndex] && !prevAnyButtonStates[restartButtonIndex]) {
+					reset(false);
+					start();
+				}
+				if (currAny[tapButtonIndex] && !prevAnyButtonStates[tapButtonIndex]) {
+					joyAutoCapture = true;
+					if (!isRunning) start();
+					if (isRunning) {
+						const now = performance.now();
+						if (startTimeMs == null) startTimeMs = now;
+						pressTimes.push(now - startTimeMs);
+						render();
+						maybePlayTapSound();
+					}
 				}
 			}
 			prevAnyButtonStates = currAny;
@@ -926,30 +967,40 @@
 						} else if (bindingMode === 'restart') {
 							restartButtonIndex = i;
 							localStorage.setItem('restartButtonIndex', String(i));
+						} else if (bindingMode === 'audio') {
+							audioButtonIndex = i;
+							localStorage.setItem('audioButtonIndex', String(i));
 						}
 						bindingMode = null;
 						bindTapBtn?.classList.remove('active');
 						bindRestartBtn?.classList.remove('active');
+						bindAudioBtn?.classList.remove('active');
 						updateBindingLabels();
 							setBindingUIState(false);
+						skipActionsThisPoll = true;
 						break;
 					}
 				}
 			}
 				// Actions
-			if (currPressed[restartButtonIndex] && !prevButtonStates[restartButtonIndex]) {
-				reset(false);
-				start();
-			}
-			if (currPressed[tapButtonIndex] && !prevButtonStates[tapButtonIndex]) {
-				joyAutoCapture = true;
-				if (!isRunning) start();
-				if (isRunning) {
-					const now = performance.now();
-					if (startTimeMs == null) startTimeMs = now;
-					pressTimes.push(now - startTimeMs);
-					render();
-						maybePlayTapSound();
+			if (!skipActionsThisPoll) {
+				if (audioButtonIndex >= 0 && currPressed[audioButtonIndex] && !prevButtonStates[audioButtonIndex]) {
+					if (interval85Id) stop85Loop(); else start85Loop();
+				}
+				if (currPressed[restartButtonIndex] && !prevButtonStates[restartButtonIndex]) {
+					reset(false);
+					start();
+				}
+				if (currPressed[tapButtonIndex] && !prevButtonStates[tapButtonIndex]) {
+					joyAutoCapture = true;
+					if (!isRunning) start();
+					if (isRunning) {
+						const now = performance.now();
+						if (startTimeMs == null) startTimeMs = now;
+						pressTimes.push(now - startTimeMs);
+						render();
+							maybePlayTapSound();
+					}
 				}
 			}
 			prevButtonStates = currPressed;
@@ -1065,6 +1116,7 @@
 			bindingMode = null;
 			bindTapBtn?.classList.remove('active');
 			bindRestartBtn?.classList.remove('active');
+			bindAudioBtn?.classList.remove('active');
 			updateBindingLabels();
 			setBindingUIState(false);
 			return;
@@ -1073,11 +1125,18 @@
 		if (which === 'tap') {
 			bindTapBtn?.classList.add('active');
 			bindRestartBtn?.classList.remove('active');
-			if (bindTapText) bindTapText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a gamepad button...';
+			bindAudioBtn?.classList.remove('active');
+			if (bindTapText) bindTapText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a Button';
 		} else if (which === 'restart') {
 			bindRestartBtn?.classList.add('active');
 			bindTapBtn?.classList.remove('active');
-			if (bindRestartText) bindRestartText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a gamepad button...';
+			bindAudioBtn?.classList.remove('active');
+			if (bindRestartText) bindRestartText.textContent = kbmMode ? 'Click a mouse button or press a key...' : 'Press a Button';
+		} else if (which === 'audio') {
+			bindAudioBtn?.classList.add('active');
+			bindTapBtn?.classList.remove('active');
+			bindRestartBtn?.classList.remove('active');
+			if (bindAudioText) bindAudioText.textContent = 'Press a Button';
 		}
 		// Do not suppress next mouse/key press; binding should register on first press/click
 		// Ensure window has focus so key events are received
@@ -1086,6 +1145,7 @@
 	}
 	bindTapBtn?.addEventListener('click', () => toggleBinding('tap'));
 	bindRestartBtn?.addEventListener('click', () => toggleBinding('restart'));
+	bindAudioBtn?.addEventListener('click', () => toggleBinding('audio'));
 	updateBindingLabels();
 
 	// KB/M mode toggle
@@ -1136,8 +1196,10 @@
 		// Gamepad
 		tapButtonIndex = -1;
 		restartButtonIndex = -1;
+		audioButtonIndex = -1;
 		localStorage.removeItem('tapButtonIndex');
 		localStorage.removeItem('restartButtonIndex');
+		localStorage.removeItem('audioButtonIndex');
 		// KB/M
 		kbmTapButton = -1;
 		kbmRestartButton = -1;
@@ -1151,6 +1213,7 @@
 		bindingMode = null;
 		bindTapBtn?.classList.remove('active');
 		bindRestartBtn?.classList.remove('active');
+		bindAudioBtn?.classList.remove('active');
 		updateBindingLabels();
 		setBindingUIState(false);
 	}

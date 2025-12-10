@@ -37,10 +37,14 @@
 					<div id="padName" class="value">Press Any Button</div>
 				</div>
 				<div class="row-break"></div>
-				<div class="bind-buttons">
-					<button id="bindTapBtn" class="rebind">Bind Tap Button:<br><span id="bindTapText">A</span></button>
-					<button id="bindRestartBtn" class="rebind">Bind Clear Button:<br><span id="bindRestartText">B</span></button>
-					<button id="unbindBtn" class="rebind">Unbind<br>Buttons</button>
+				<div class="bind-section">
+					<div class="bind-buttons">
+						<button id="bindTapBtn" class="rebind">Jump Button:<br><span id="bindTapText">A</span></button>
+						<button id="bindRestartBtn" class="rebind">Clear Button:<br><span id="bindRestartText">B</span></button>
+						<button id="bindAudioBtn" class="rebind">Play/Stop Audio Benchmark:<br><span id="bindAudioText">Unbound</span></button>
+						<button id="unbindBtn" class="rebind">Unbind<br>Buttons</button>
+					</div>
+					<div class="bind-header label">Click A Button To Rebind!</div>
 				</div>
 				<div class="vj-wrap">
 					<div class="vj-container">
@@ -63,7 +67,7 @@
 
 		<section class="audio card">
 			<div class="graph-header">
-				<h2>Audio benchmark</h2>
+				<h2>Audio Benchmark</h2>
 			</div>
 			<div class="row">
 				<button id="play85Btn" class="primary">Play</button>
